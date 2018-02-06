@@ -1,0 +1,13 @@
+{
+    "compilerOptions": {        
+        "target": "es6",
+        "noImplicitAny": true,
+        "removeComments": true,
+        "preserveConstEnums": true,
+        "sourceMap": true,
+        "strict": true
+    },
+    "files": [
+        "coursera1.ts",
+    ]
+}
