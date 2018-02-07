@@ -8,6 +8,6 @@
         "strict": true
     },
     "files": [
-        "coursera1.ts"
+        "week1/problem2/coursera2.ts"
     ]
 }
