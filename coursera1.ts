@@ -11,9 +11,57 @@ process.stdin.on('data', function (data: any) {
 });
 
 process.stdin.on('end', function () {
-    input_stdin_array = input_stdin.split("\n");
-    main();    
+    input_stdin_array = input_stdin.split("\n").slice(0, -1);
+    output(main());
+    //runGenerated();
 });
+
+function runGenerated() {
+    function shuffle(a: string[]): string[] {
+        var j, x, i;
+        for (i = a.length - 1; i > 0; i--) {
+            j = Math.floor(Math.random() * (i + 1));
+            x = a[i];
+            a[i] = a[j];
+            a[j] = x;
+        }
+        return a;
+    }
+    function generateCase(n: number, m: number, opacity: number) {
+        return [
+            n + " " + m,
+            ...Array.from({ length: m }, () => {
+                const from = 1 + Math.floor(Math.random() * n);
+                const to = 1 + Math.floor(Math.random() * n);
+                return from + " " + to + " " + Math.floor(opacity * Math.random());
+            })
+        ]
+    }
+    let res;
+    for (var k = 0; k < 1000; k++) {
+        res = undefined;
+        input_stdin_array = generateCase(40, 400, 50);
+        for (var i = 0; i < 10; i++) {
+            input_currentline = 0;
+            const oldInput = input_stdin_array;
+            input_stdin_array = input_stdin_array.slice(0, 1).concat(shuffle(input_stdin_array.slice(1)));
+            let newRes = main();
+            
+            if (res !== undefined) {
+                if (newRes !== res) {
+                    output(newRes, "!=", res)
+                    output("\n" + newRes + ":");
+                    output(input_stdin_array.join("\n"))
+                    output("\n" + res + ":");
+                    output(oldInput.join("\n"));
+                    throw "Failed on attempt " + i + " case " + k;
+                }
+            }
+            res = newRes;
+        }
+    }
+    output(res);
+}
 
 function readLine() {
     return input_stdin_array[input_currentline++];
@@ -43,38 +91,48 @@ function addFlow(graph: Graph, from: string, to: string, value: number) {
     graph.get(from)!.set(to, flow)
 }
 function bfs(graph: Graph, from: string, to: string): [string[], number] | undefined {
-    const visited: Map<string, [number, number]> = new Map()
-    visited.set(from, [0, Infinity]);
+    const visited: Map<string, number> = new Map()
+    visited.set(from, 0);
     const queue: string[] = [from];
     let queueIdx = 0;
-
+    let currentStep = 0;
     while(queueIdx < queue.length) {
         let currentVertex = queue[queueIdx++];
-        let [currentIndex, currentFlow] = visited.get(currentVertex)!;
-        if (currentVertex === to) {
-            const path: string[] = [to];
-            console.log(currentIndex, visited);
-            console.log(graph)
-            while (currentIndex > 0) {
-                const [vertex, [index, flow]] = [...visited.entries()]
-                .filter(([vertex, [index, flow]]) => index === currentIndex - 1
-                    && graph.get(vertex)!.get(currentVertex)
-                ).sort(([, [,a]], [, [,b]]) => b - a)[0];
-                currentVertex = vertex;
-                currentIndex = index;
-                path.push(currentVertex);
-            }
-            return [path.reverse(), currentFlow];
-        } else {
-            for (const [n, capacity] of graph.get(currentVertex)!.entries()) {
-                const possibleFlow = currentVertex === from
-                    ? capacity
-                    : Math.min(currentFlow, Math.abs(capacity));
-                const prevVisit = visited.get(n);
-                if (possibleFlow > 0 && (prevVisit === undefined)) {
-                    console.log("visit", currentVertex, "->", n, "at", currentIndex + 1, "with", possibleFlow);
-                    queue.push(n);
-                    visited.set(n, [currentIndex + 1, possibleFlow]);
+        let currentStep = visited.get(currentVertex)!;
+        for (const [n, capacity] of graph.get(currentVertex)!.entries()) {
+            if (capacity !== 0) {
+                if (n === to) {
+                    const path: string[] = [to];
+                    console.log(currentStep, visited);
+                    console.log(graph)
+                    currentVertex = to;
+                    currentStep = currentStep + 1;
+                    let currentFlow = Infinity;
+                    loop: while (currentStep > 0) {
+                        for (const [n, capacity] of graph.get(currentVertex)!.entries()) {
+                            const pathCapacity = graph.get(n)!.get(currentVertex)!;
+                            if (visited.get(n) === currentStep - 1 && pathCapacity) {
+                                path.push(n);
+                                currentStep = currentStep - 1;
+                                console.log(graph.get(n)!.get(currentVertex)!)
+                                currentFlow = Math.min(Math.abs(pathCapacity), currentFlow);
+                                currentVertex = n;
+                                continue loop;
+                            }
+                        }
+                        throw new Error("not found");
+                    }
+                    if (currentFlow === 0) {
+                        throw "WTF"
+                    }
+                    return [path.reverse(), currentFlow];
+                } else {
+                    const prevVisit = visited.get(n);
+                    if (prevVisit === undefined) {
+                        console.log("visit", currentVertex, "->", n, "at", currentStep + 1);
+                        queue.push(n);
+                        visited.set(n, currentStep + 1);
+                    }
                 }
             }
         }
@@ -95,14 +153,12 @@ function main() {
         }
     }
     if (m === 0) {
-        output(0);
-        return;
+        return 0;
     }
 
     let res = bfs(graph, "1", n.toString());
     if (res == undefined) {
-        output(0);
-        return;
+        return 0;
     }
     var c = 0;
     while(true) {
@@ -129,8 +185,7 @@ function main() {
             //
         } else {
             const sum = [...graph.get(n.toString())!.values()].filter(a => a < 0).reduce((a, b) => a + b, 0);
-            output(Math.abs(sum));
-            return;
+            return Math.abs(sum);
         }
     }
 }
