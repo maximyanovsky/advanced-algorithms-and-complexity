@@ -4,10 +4,11 @@
         "noImplicitAny": true,
         "removeComments": true,
         "preserveConstEnums": true,
-        "sourceMap": true,
-        "strict": true
+        "sourceMap": false,
+        "strict": true,
+        "outDir": "./build"
     },
-    "files": [
-        "week1/problem2/coursera2.ts"
+    "include": [
+        "src/**/*.ts"
     ]
 }

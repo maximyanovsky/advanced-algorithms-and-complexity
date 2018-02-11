@@ -1,91 +1,5 @@
-declare const process: any;
-process.stdin.resume();
-process.stdin.setEncoding('ascii');
-
-var input_stdin = "";
-var input_stdin_array: string[];
-var input_currentline = 0;
-
-process.stdin.on('data', function (data: any) {
-    input_stdin += data;
-});
-
-process.stdin.on('end', function () {
-    input_stdin_array = input_stdin.split("\n").slice(0, -1);
-    output(main());
-    //srunGenerated();
-});
-
-function readLine() {
-    return input_stdin_array[input_currentline++];
-}
-
-
-function main() {
-    const [flightsCount, crewCount] = readLine().split(" ").map(Number);
-    const graph = new Map();
-    for (var i = 1; i <= crewCount; i++) {
-        addEdge(graph, i.toString(), "sink", 1);
-    }
-    for (var i = 1; i <= flightsCount; i++) {
-        addEdge(graph, "source", "flight" + i, 1);
-        readLine().split(" ").forEach((s, idx) => {
-            const suitable = s === "1";
-            if (suitable) {
-                addEdge(graph, "flight" + i, (idx + 1).toString(), 1);
-            }
-        });
-    }
-    console.log(graph)
-    /*
-
-    let res = bfs(graph, "source", "sink");
-    if (res == undefined) {
-        return 0;
-    }
-    */
-    var c = 0;
-    while(true) {
-        let res = bfs(graph, "source", "sink");
-        if (res) {
-            const [path, flow] = res;
-            console.log("the path is ", res)
-            for (var i = 0; i < path.length - 1; i++) {
-                const from = path[i];
-                const to = path[i+1];
-
-                if (getFlow(graph, from, to) < 0) {
-                    addFlow(graph, from, to, flow);
-                    addFlow(graph, to, from, flow);
-                } else {
-                    addFlow(graph, from, to, -flow);
-                    addFlow(graph, to, from, -flow);
-                }
-            }
-            console.log(graph)
-            if (++c > Infinity) {
-                throw "yo"
-            }
-            //
-        } else {
-            let res = [];
-            for (var i = 1; i <= flightsCount; i++) {
-                let crew = -1;
-                for (const [n, c] of graph.get("flight" + i)!.entries()) {
-                    if (c === 0 && n !== "source") {
-                        crew = n;
-                        break;
-                    }
-                }
-                res.push(crew);
-            }
-            return res.join(" ");
-        }
-    }
-}
-
-type Graph = Map<string, Map<string, number>>;
-function addEdge(graph: Graph, from: string, to: string, capacity: number) {
+export type Graph = Map<string, Map<string, number>>;
+export function addEdge(graph: Graph, from: string, to: string, capacity: number) {
     addOneDirection(graph, from, to, capacity);
     addOneDirection(graph, to, from, 0);
 }
@@ -97,16 +11,16 @@ function addOneDirection(graph: Graph, from: string, to: string, capacity: numbe
     map.set(to, value);
     graph.set(from, map);
 }
-function getFlow(graph: Graph, from: string, to: string) {
+export function getFlow(graph: Graph, from: string, to: string) {
     return graph.get(from)!.get(to)!;
 }
-function addFlow(graph: Graph, from: string, to: string, value: number) {
+export function addFlow(graph: Graph, from: string, to: string, value: number) {
     let flow = getFlow(graph, from, to);
     console.log("add", value, from, "->", to)
     flow += value;
     graph.get(from)!.set(to, flow)
 }
-function bfs(graph: Graph, from: string, to: string): [string[], number] | undefined {
+export function bfs(graph: Graph, from: string, to: string): [string[], number] | undefined {
     const visited: Map<string, number> = new Map()
     visited.set(from, 0);
     const queue: string[] = [from];
@@ -155,6 +69,3 @@ function bfs(graph: Graph, from: string, to: string): [string[], number] | undef
     }
     console.log("not found")
 }
-
-const output = console.log;
-console.log = (...args: any[]) => undefined;

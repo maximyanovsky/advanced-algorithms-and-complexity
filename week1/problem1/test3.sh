@@ -1,1 +1,0 @@
-echo "2 0" | node coursera1.js

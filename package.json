@@ -1,0 +1,48 @@
+{
+  "name": "advanced-algorithms-and-complexity",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dist": "tsc -p tsconfig.json && npx webpack"
+  },
+  "jest": {
+    "modulePaths": [
+      "<rootDir>"
+    ],
+    "moduleFileExtensions": [
+      "ts",
+      "tsx",
+      "js",
+      "jsx",
+      "json"
+    ],
+    "transform": {
+      "^.+\\.(ts|tsx)$": "<rootDir>/src/utils/preprocessor.js"
+    },
+    "testMatch": [
+      "**/*.(Spec|spec)\\.(ts|tsx)"
+    ]
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/maximyanovsky/advanced-algorithms-and-complexity.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/maximyanovsky/advanced-algorithms-and-complexity/issues"
+  },
+  "homepage": "https://github.com/maximyanovsky/advanced-algorithms-and-complexity#readme",
+  "devDependencies": {
+    "@types/jest": "^22.1.2",
+    "@types/node": "^9.4.4",
+    "babel-core": "^6.26.0",
+    "babel-jest": "^22.2.2",
+    "babel-preset-env": "^1.6.1",
+    "jest": "^22.2.2",
+    "typescript": "^2.7.1",
+    "webpack": "^3.11.0"
+  }
+}
