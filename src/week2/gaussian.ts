@@ -4,9 +4,13 @@ const isZero = (x: number) => Math.abs(x) < 0.0001;
 export class Matrix {
     private source: string;
     public data: number[][];
-    constructor(data: string[]) {
+    constructor(data: string[] | number[][]) {
         this.source = data.join("\n");
-        this.data = data.map(x => x.split(" ").map(Number));
+        if (Array.isArray(data[0])) {
+            this.data = data as any;
+        } else {
+            this.data = (data as string[]).map(x => x.split(" ").map(Number));
+        }
     }
     public multiply(idx: number, multiplicator: number) {
         const size = this.data.length;

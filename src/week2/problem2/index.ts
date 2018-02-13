@@ -7,7 +7,7 @@ export default function(input: string[]) {
     console.log(input.join("\n"));
 
     const [restrictions, dishes] = input[0].split(" ").map(Number);
-    const toMaximize = input.slice(-1);
+    const toMaximize = input.slice(-1).map(Number);
     const rows = input.slice(1, -2);
     const rightColumn = input.slice(-2, -1)[0].split(" ");
 
@@ -31,17 +31,61 @@ export default function(input: string[]) {
         m.solveAllRows();
         return true;
     }
-
-    matrixData = matrixData.filter((currentRow, idx) => {
+    type Row = number[];
+    const intersections = new Map<Row, Row[][]>();
+    matrixData.forEach((currentRow, idx) => {
         const withoutCurrent = matrixData.filter((x, i) => i !== idx);
         const combinations = brutForce(withoutCurrent, dishes - 1);
-        combinations.findIndex((row) => intersects(...row, currentRow))
+        const intersectsWith = combinations.filter((row) => intersects(...row, currentRow));
+        if (intersectsWith.length > 0) {
+            intersections.set(currentRow, intersectsWith);   
+        }
     });
+
+    type Vertex = number[];
+
+    function getVertex(rows: Row[]) {
+        if (rows.length !== dishes) {
+            throw new Error();
+        }
+        const m = new Matrix(rows);
+        m.rowReduce();
+        const vertex = m.solveAllRows();
+        return vertex;
+        
+    }
+    function getValue(vertex: Vertex) {
+        const res = vertex.map((x, idx) => x * toMaximize[idx]).reduce((a, b) => a + b);
+        return res;
+    }
+
+    const forwardX: Row = [1].concat(new Array<number>(dishes - 1).fill(0))
+
+    for (let [row, combination] of intersections) {
+
+        let currentValue = [row, ...combination[0]];
+
+        for (let intersectWith of combination) {
+            const currentValue = getValue(getVertex([row, ...intersectWith]));
+            for (let otherRow of intersectWith) {
+
+                const others = intersectWith.filter(x => x !== otherRow);
+                const m = new Matrix([row, ...others]);
+
+                const forwardVertex = getVertex([row, ...others, forwardX]);
+                const backwardVertex = getVertex([row, ...others, backwardX]);
+
+                const forwardValue = getValue(forwardVertex);
+                const backwardValue = getValue(backwardVertex);
+
+                m.rowReduce();
+                console.log(m.toString());
+            }
+        }
+
+        break;
+    }
     
-    
-    const m = new Matrix(matrixData.map(x => x.join(" ")));
-    m.rowReduce();
-    console.log(m.toString());
     /*
     
     const pnt = m.solveAllRows();
