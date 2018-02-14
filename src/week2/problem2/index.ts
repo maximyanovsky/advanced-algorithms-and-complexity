@@ -62,24 +62,23 @@ export default function(input: string[]) {
     const forwardX: Row = [1].concat(new Array<number>(dishes - 1).fill(0))
 
     for (let [row, combination] of intersections) {
-
-        let currentValue = [row, ...combination[0]];
+        let currentVertex = getVertex([row, ...combination[0]]);
+        let currentValue = getValue(currentVertex);
 
         for (let intersectWith of combination) {
-            const currentValue = getValue(getVertex([row, ...intersectWith]));
-            for (let otherRow of intersectWith) {
+            for (let relaxRow of intersectWith) {
 
-                const others = intersectWith.filter(x => x !== otherRow);
+                const others = intersectWith.filter(x => x !== relaxRow);
                 const m = new Matrix([row, ...others]);
 
                 const forwardVertex = getVertex([row, ...others, forwardX]);
-                const backwardVertex = getVertex([row, ...others, backwardX]);
-
                 const forwardValue = getValue(forwardVertex);
-                const backwardValue = getValue(backwardVertex);
 
-                m.rowReduce();
-                console.log(m.toString());
+                if (forwardValue > currentValue) {
+                    
+
+                    
+                }
             }
         }
 
