@@ -7,7 +7,7 @@ export class Matrix {
     constructor(data: string[] | number[][]) {
         this.source = data.join("\n");
         if (Array.isArray(data[0])) {
-            this.data = data as any;
+            this.data = (data as any).concat().map((x: any) => x.concat());
         } else {
             this.data = (data as string[]).map(x => x.split(" ").map(Number));
         }
@@ -44,7 +44,7 @@ export class Matrix {
         console.log(row.slice(-1)[0], k[0])
         return row.slice(-1)[0] / k[0];
     }
-    public solveAllRows(): number[] {
+    public solveAllRows(): number[] | undefined {
         const res: number[] = [];
         for (var i = this.data.length - 1; i >= 0; i--) {
             const row = this.data[i];
@@ -53,29 +53,33 @@ export class Matrix {
                 row[row.length - 2 - j] = 0;
                 row[row.length - 1] += -k * res[j]
             }
-            console.log("substituted\n", row);
-            res.push(this.solveRow(i));
+            //console.log("substituted\n", row);
+            let x = this.solveRow(i);
+            if (isNaN(x)) return undefined;
+            res.push(x);
         }
         return res.reverse();
     }
     public rowReduce() {
         const height = this.data.length;
         const width = this.data[0].length;
+        let ladder = 0;
         for (var i = 0; i < height; i++) {
-            console.log("begin\n" + this)
+            //console.log("begin\n" + this)
             let column = this.data.map(x => x[i]);
             const firstNonZero = column.findIndex((x, idx) => !isZero(x) && idx >= i);
             if (firstNonZero > -1) {
-                this.swap(i, firstNonZero);
-                console.log(`swapped ${i} ${firstNonZero}\n` + this)
+                this.swap(ladder, firstNonZero);
+                ladder++;
+                //console.log(`swapped ${i} ${firstNonZero}\n` + this)
                 column = this.data.map(x => x[i]);
                 for (var j = i + 1; j < height; j++) {
                     if (i !== j && !isZero(column[j])) {
-                        console.log("multiplicator", column[i] / column[j])
+                        //console.log("multiplicator", column[i] / column[j])
                         this.multiply(j, column[i] / column[j]);
-                        console.log("multiplied\n" + this)
+                        //console.log("multiplied\n" + this)
                         this.subtract(j, i);
-                        console.log("subtracted\n" + this)
+                        //console.log("subtracted\n" + this)
                     }
                 }
             }
