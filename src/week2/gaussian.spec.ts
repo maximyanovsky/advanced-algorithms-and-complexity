@@ -31,4 +31,15 @@ describe("Matrix", () => {
         const m = new Matrix(["0 9 27",]);
         expect(m.solveRow(0)).toEqual(3);
     });
+    it.only("solves matrix from problem2", () => {
+        const m = new Matrix([
+            "-77 71 15 49 -2 -44048",
+            "77 -71 37 89 95 -6918",
+            "0 0 1 0 0 0",
+            "0 0 0 1 0 0",
+            "0 0 0 0 1 0",
+        ]);
+        m.rowReduce();
+        m.solveAllRows();
+    });
 });

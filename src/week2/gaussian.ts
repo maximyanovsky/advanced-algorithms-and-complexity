@@ -1,6 +1,13 @@
 
 const isZero = (x: number) => Math.abs(x) < 0.0001;
-
+const formatNumber = (x: number, n: number) => {
+    const r = x.toFixed(1);
+    const spaces = n - r.length;
+    if (spaces > 0) {
+        return " ".repeat(spaces) + r; 
+    }
+    return r;
+}
 export class Matrix {
     private source: string;
     public data: number[][];
@@ -41,7 +48,7 @@ export class Matrix {
         if (k.length > 1) {
             throw new Error("Can't extract, too many coefficients: " + k + "\n" + this.source);
         }
-        console.log(row.slice(-1)[0], k[0])
+        //console.log(row.slice(-1)[0], k[0])
         return row.slice(-1)[0] / k[0];
     }
     public solveAllRows(): number[] | undefined {
@@ -69,9 +76,10 @@ export class Matrix {
             let column = this.data.map(x => x[i]);
             const firstNonZero = column.findIndex((x, idx) => !isZero(x) && idx >= i);
             if (firstNonZero > -1) {
-                this.swap(ladder, firstNonZero);
-                ladder++;
-                //console.log(`swapped ${i} ${firstNonZero}\n` + this)
+                if (ladder !== firstNonZero) {
+                    this.swap(ladder, firstNonZero);
+                    //console.log(`swapped ${ladder} ${firstNonZero}\n` + this)
+                }
                 column = this.data.map(x => x[i]);
                 for (var j = i + 1; j < height; j++) {
                     if (i !== j && !isZero(column[j])) {
@@ -83,9 +91,10 @@ export class Matrix {
                     }
                 }
             }
+            ladder++;
         }
     }
     public toString() {
-        return this.data.map(x => x.map(x => x < 0 ? x.toFixed(2) : " " + x.toFixed(2)).join(" ")).join("\n");
+        return this.data.map(x => x.map(x => formatNumber(x, 8)).join(" ")).join("\n");
     }
 }

@@ -7,5 +7,5 @@ export default function (input: string[]): string {
     }
     const m = new Matrix(input.slice(1));
     m.rowReduce();
-    return m.solveAllRows().map(x => x.toFixed(6)).join(" ");
+    return m.solveAllRows()!.map(x => x.toFixed(6)).join(" ");
 }

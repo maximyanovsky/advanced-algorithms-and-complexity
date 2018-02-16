@@ -9,13 +9,15 @@ type Edge = Eq[]; //n-1 equasions define edge
 class Eq {
     public id: string;
     public data: number[];
-    public vertices: Vertex[] = [];
     constructor(row: number[]) {
         this.id = row.join("|");
         this.data = row;
     }
     toString() {
         return "Eq(" + this.id + ")";
+    }
+    move(t: number): Eq {
+        return new Eq(this.data.slice(0, -1).concat([this.data[this.data.length - 1] + t]))
     }
 }
 
@@ -27,6 +29,9 @@ class Polytop {
     private backwardEq: Eq;
     private toMax: number[];
     private firstPart: number[][];
+    public maxValue: number;
+    public maxValueSolution: number[];
+    public maxValueVertex: Vertex | undefined;
     constructor(data: Equasion[], toMax: number[], contsraints: number[]) {
         this.toMax = toMax;
         this.equations = data.map(x => new Eq(x));
@@ -37,36 +42,65 @@ class Polytop {
         this.backwardEq = new Eq([-1, ...zeroes, 1]);
 
         const combinations = brutForce(this.equations, this.dimension);
-        console.log("combinations", combinations);
+        //console.log("combinations", combinations);
 
         this.firstPart = data.slice(0, data.length - this.dimension);
+
+        let maxValue = -Infinity;
+        let maxValueSolution: number[] = [];
+        let maxValueVertex: Vertex | undefined;
         this.vertices = combinations.filter((x) => {
             const m = new Matrix(x.map(x => x.data));
             m.rowReduce();
             const solution = m.solveAllRows();
-            console.log(m.toString());
-            console.log(solution)
-            if (solution && solution.every(x => x >= 0) && this.isSolution(solution)) {
-                console.log("vertex found", solution);
-                this.vertices.push(x);
-                return true;
+            //console.log(m.toString());
+            //console.log(solution)
+            if (solution) {
+                if (this.isSolution(solution)) {
+                    const v = this.getValue(solution);
+                    if (v > maxValue) {
+                        maxValue = v;
+                        maxValueSolution = solution;
+                        maxValueVertex = x;
+                    }
+                    console.log("vertex found", solution, this.getValue(solution));
+                    this.vertices.push(x);
+                    return true;
+                } else {
+                    console.log("not a solution", solution, this.getValue(solution))
+                }
+                
             } else {
                 console.log("not solved");
                 return false;
             }
         });
 
+        this.maxValue = maxValue;
+        this.maxValueSolution = maxValueSolution;
+        this.maxValueVertex = maxValueVertex;
+
         console.log("vertices\n", this.vertices);
     }
 
     isSolution(solution: number[]): boolean {
+        const epsilon = 0.0000001;
+        const nonNegative = solution.every(x => x >= -epsilon);
+        if (!nonNegative) {
+            return false;
+        }
         return this.firstPart.every((eq) => {
-            return solution.map((x, idx) => x * eq[idx]).reduce((a, b) => a + b, 0) <= eq[eq.length - 1];
+            const sum = solution.map((x, idx) => x * eq[idx]).reduce((a, b) => a + b, 0);
+            const boundary = eq[eq.length - 1];
+            if (sum > boundary + epsilon) {
+                console.log("bigger", sum-boundary);
+            }
+            return sum <= boundary + epsilon;
         });
     }
 
     getEdges(vertex: Vertex): Edge[]  {
-        return brutForce(vertex, this.dimension - 1);
+        return brutForce(vertex, Math.max(this.dimension - 1, 1));
     }
 
       getVerticesOnEdge(edge: Edge): Vertex[] {
@@ -116,13 +150,6 @@ class Polytop {
         console.log(solution, this.toMax)
         return solution.map((x, idx) => x * this.toMax[idx]).reduce((a, b) => a + b, 0);
     }
-
-    getVertexOnEdge(edge: Edge, forward: boolean): Vertex {
-        if (forward) {
-            return [...edge];
-        }
-        return [...edge];
-    }
 }
 
 export default function(input: string[]) {
@@ -144,16 +171,33 @@ export default function(input: string[]) {
     console.log("matrixdata\n", matrixData.join("\n"));
     const polytop = new Polytop(matrixData, toMaximize, rightColumn);
 
-    let currentVertex = polytop.vertices[0];
+    
+    let currentVertex = polytop.maxValueVertex;
     if (!currentVertex) {
         return "No solution";
     }
+
+    if (polytop.dimension === 1) {
+        const solved = polytop.vertices.map((vertex) => {
+            const solution = polytop.getSolution(vertex)!;
+            const value = polytop.getValue(solution);
+            return { solution, value };
+        });
+        const { solution, value } = _.max(solved, x => x.value);
+        const forwardSolution = [solution[0] + 1];
+        if (polytop.isSolution(forwardSolution) && polytop.getValue(forwardSolution) > value) {
+            return "Infinity";
+        }
+        return "Bounded solution\n" + solution.map(x => x.toFixed(15)).join(" ");
+    }
     console.log("currentVertex", currentVertex);
-    const currentSolution = polytop.getSolution(currentVertex)!;
-    let currentValue = polytop.getValue(currentSolution);
-    console.log(currentValue)
+    const currentSolution = polytop.maxValueSolution;
+    let currentValue = polytop.maxValue;
+    console.log("current value", currentValue)
     loop: while (true) {
-        for (let edge of polytop.getEdges(currentVertex)) {
+        const edges = polytop.getEdges(currentVertex);
+        console.log("edges", edges);
+        for (let edge of edges) {
             const verticesOnEdge = polytop.getVerticesOnEdge(edge).filter(vertex => vertex !== currentVertex);
             console.log("edge", edge)
             console.log("vertices on edge", verticesOnEdge);
@@ -170,14 +214,23 @@ export default function(input: string[]) {
                     console.log(value + " < " + currentValue);
                 }
             }
-            const forward = polytop.getSolution(edge, 1);
-            console.log("forward", forward)
-            if (forward && polytop.isSolution(forward) && polytop.getValue(forward) > currentValue) {
-                console.log(forward)
-                return "Infinity";
-            }
         }
 
+        console.log(">>>> Checking for infinity");
+        for (var eq of currentVertex) {
+            console.log("Check " + eq);
+            const without = currentVertex.filter(x => x !== eq);
+            for (let t of [-1, 1]) {
+                const forward = polytop.getSolution(without.concat([eq.move(t)]));
+                console.log("forward", forward)
+                if (forward && polytop.isSolution(forward) && polytop.getValue(forward) > currentValue) {
+                    console.log(polytop.getValue(forward) + " > " + currentValue);
+                    return "Infinity";
+                }
+            }
+            
+            //const backward = polytop.getSolution(without.concat([eq.move(-1)]));
+        }
         const m = new Matrix(currentVertex.map(x => x.data));
         m.rowReduce();
         const solution = m.solveAllRows()!;
