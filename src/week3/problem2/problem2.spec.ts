@@ -115,17 +115,18 @@ describe("week3/problem2", () => {
         console.log(result);
         expect(getResult(result)).toBe(false);
     });
-    it.skip("it solves 30 0", () => {
+    it("it solves 30 0", () => {
         const result = solve(split(`
             30 0
         `))
         console.log(result.substr(0, 30))
-        //expect(getResult(result)).toBe(false);
+        expect(getResult(result)).toBe(false);
     });
 
-    it.skip("it solves sample3", () => {
+    it("it solves sample3", () => {
         console.log = jest.fn();
-        const result = solve(split(`30 80
+        const result = solve(split(`
+        30 80
         1 9
         1 10
         1 16
@@ -206,7 +207,7 @@ describe("week3/problem2", () => {
         30 11
         30 16
         30 19`))
-        console.log(result.substr(0, 50));
+        console.log(result);
         expect(getResult(result)).toBe(true);
     });
 });

@@ -37,7 +37,7 @@ export default function(input: string[]) {
             //@ts-ignore
             return {
                 not: (x: number | string) => -x,
-                create: (i: number, idx: number) => i * n + idx + 1,
+                create: (i: number, j: number) => i * n + j + 1,
             }
         } else {
             //@ts-ignore
@@ -57,40 +57,57 @@ export default function(input: string[]) {
     }
 
     const result: (number | string)[][] = [];
-    const numbers = Array.from({ length: n }, (x, idx) => idx);
-    result.push(...brutForce(numbers, 2).map(([a, b]) => {
-        return Array.from({ length: n }, (x, idx) => [not(create(a, idx)), not(create(b, idx))]);
-    }).reduce((a, b) => a.concat(b)));
 
-    const mem: any = {};
-    for (let i = 0; i < nodes.length; i++) {
-        const self = (i + 1).toString();
-        const path = getPath(i);
-        mem[self] = mem[self] || {};
-        result.push(path)
-        result.push(...brutForce(path, 2).map(x => x.map(y => not(y))));
-        const neighbors = graph[nodes[i]];
-        const nonNeighbors = nodes.filter(x => neighbors[x] === undefined && x !== self && mem[self][x] === undefined);
-        console.log("for", self, "non neighbors are", nonNeighbors);
-        const r: any[] = [];
-        nonNeighbors.forEach((node) => {
-            const other = getPath(Number(node) - 1);
-            path.forEach((x, idx) => {
-                if (idx < n - 1) {
-                    r.push([not(x), not(other[idx + 1])]);
-                }
-                if (idx > 0) {
-                    r.push([not(x), not(other[idx - 1])]);
-                }
-            })
-            mem[node] = mem[node] = {};
-            mem[self][node] = true;
-            mem[node][self] = true;
-        })
-        console.log(r.join("\n"));
-        result.push(...r);
+    const set = new Set();
+    function append(i: any, j: any) {
+        if (set.has(i+"_"+j)) {
+            return
+        }
+        result.push([i, j]);
+        set.add(i+"_"+j);
+        set.add(j+"_"+i);
     }
-    const output = result.map(x => x.concat([0]).join(" "))
+
+    for (let i = 0; i < n; i++) {
+        //1. each node must be in the path
+        result.push(Array.from({ length: n }, (x, idx) => create(idx, i)));
+        //3. Every position i on the path must be occupied.
+        result.push(Array.from({ length: n }, (x, idx) => create(i, idx)));
+    }
+
+    //2. No node appears twice in the path
+    for (let j = 0; j < n; j++) {
+        for (let i = 0; i < n; i++) {
+            for (let k = 0; k < n; k++) {
+                if (i !== k) {
+                    append(
+                        not(create(i, j)),
+                        not(create(k, j)),
+                    );
+                }
+                if (j !== k) {
+                    append(
+                        not(create(i, j)),
+                        not(create(i, k)),
+                    );
+                }
+                const I = (i + 1).toString();
+                const J = (j + 1).toString();
+                if (k < n - 1 && graph[I][J] === undefined && graph[J][I] === undefined) {
+                    append(
+                        not(create(k, i)),
+                        not(create(k + 1, j)),
+                    );
+                }
+            }
+        }
+    }
+
+    let c = 0;
+    const output = result.map(x => {
+        c += x.length;
+        return x.concat([0]).join(" ");
+    });
     return [
         output.length + " " + n * n,
         ...output,

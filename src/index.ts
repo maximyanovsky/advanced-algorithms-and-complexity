@@ -17,3 +17,10 @@ process.stdin.on("end", function () {
         process.stdout.write(result + "\n");
     }
 });
+
+/*
+
+global["startTime"] = Date.now();
+global["debugTime"] = (label) => console.log(label + " " + (Date.now() - global["startTime"]));
+
+*/
