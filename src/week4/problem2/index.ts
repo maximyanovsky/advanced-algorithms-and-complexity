@@ -1,4 +1,5 @@
 export default function(input: string[]) {
+    const startTime = Date.now();
     console.log(input)
     const n = Number(input[0]);
     const graph: any = {};
@@ -17,23 +18,22 @@ export default function(input: string[]) {
         lll[b]++;
     }
 
-    let leave: string = "";
-    let maxV = -1;
+
+    let leaf: string = "";
     console.log(lll)
     for (var k in lll) {
-        if (lll[k] <= 1 && funFactor[Number(k)] > maxV) {
-            maxV = funFactor[Number(k)];
-            leave = k;
+        if (lll[k] <= 1) {
+            leaf = k;
             break;
         }
     }
-    console.log("leave", leave)
+    console.log("leave", leaf)
     var visited: any = {}
-    var queue = Object.keys(graph[leave]);
+    var queue = Object.keys(graph[leaf]);
     for (const n of queue) {
         visited[n] = true;
-        console.log("delete", n + "->" + leave);
-        delete graph[n][leave];
+        console.log("delete", n + "->" + leaf);
+        delete graph[n][leaf];
     }
     let queueIndex = 0;
     while(queueIndex < queue.length) {
@@ -42,37 +42,60 @@ export default function(input: string[]) {
         for (let n in graph[visitingNode]) {
             if (!visited[n]) {
                 queue.push(n);
-                visited[n] = true;
+                visited[n] = 1 + visited[visitingNode];
                 console.log("delete", n + "->" + visitingNode);
                 delete graph[n][visitingNode];
             }
         }
         queueIndex++;
     }
+
+    console.log("preparation", Date.now() - startTime)
+
+    const nodesInGoodOrder = Object.keys(graph).sort((a, b) => {
+        return visited[b] - visited[a];
+    });
+
+    queue = nodesInGoodOrder;
+    let qIdx = 0;
     const cache: any = {};
-    function funParty(node: string) {
-        
+    const onStack = {};
+    while(qIdx < queue.length) {
+        const node = queue[qIdx++];
         if (cache[node] === undefined) {
             const children = Object.keys(graph[node]);
             if (children.length === 0) {
                 cache[node] = funFactor[Number(node)];
             } else {
                 let m1 = funFactor[Number(node)];
+                const qLength = queue.length;
                 for (let childrenNode of children) {
                     for (let grandChildrenNode in graph[childrenNode]) {
-                        m1 += funParty(grandChildrenNode);
+                        if (!(grandChildrenNode in graph[node])) {
+                            if (cache[grandChildrenNode] == undefined) {
+                                queue.push(grandChildrenNode);
+                            } else {
+                                m1 += cache[grandChildrenNode];
+                            }
+                        }
                     }
                 }
                 let m2 = 0;
                 for (let childrenNode of children) {
-                    m2 += funParty(childrenNode);
+                    if (cache[childrenNode] == undefined) {
+                        queue.push(childrenNode);
+                    } else {
+                        m2 += cache[childrenNode];
+                    }
                 }
-                cache[node] = Math.max(m1, m2);
+                if (queue.length === qLength) {
+                    cache[node] = Math.max(m1, m2);
+                } else {
+                    queue.push(node);
+                }
             }
         }
-        console.log(`funparty(${node})===` + cache[node]);
-        return cache[node];
     }
-    console.log("graph", graph);
-    return funParty(leave).toString();
+    //console.log(queue.length)
+    return cache[leaf].toString();
 }
